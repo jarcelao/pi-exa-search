@@ -13,15 +13,7 @@ Exa search extension for [pi](https://github.com/mariozechner/pi) - web search a
 Install as a pi package:
 
 ```bash
-pi package install pi-exa-search
-```
-
-Or clone and install locally:
-
-```bash
-git clone <repo-url>
-cd pi-exa-search
-pi package install ./
+pi install https://github.com/jarcelao/pi-exa-search@v1.0.0
 ```
 
 ## Configuration
