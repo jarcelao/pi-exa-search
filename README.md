@@ -8,7 +8,7 @@ Web search and content fetching for [pi](https://pi.dev) via the [Exa API](https
 Install as a pi package:
 
 ```bash
-pi install npm:@jarcelao/pi-exa-api@0.1.0
+pi install npm:@jarcelao/pi-exa-api@0.1.1
 ```
 
 ## Configuration
