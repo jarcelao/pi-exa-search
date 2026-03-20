@@ -1,7 +1,14 @@
 {
   "name": "@jarcelao/pi-exa-api",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Web search and content fetching for pi via the Exa API",
+  "author": "Jericho Renniel Arcelao <jerichoarcelao@gmail.com>",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jarcelao/pi-exa-api.git"
+  },
+  "homepage": "https://github.com/jarcelao/pi-exa-api",
   "keywords": [
     "pi-package"
   ],
