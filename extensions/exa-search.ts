@@ -11,11 +11,13 @@
 import type { ExtensionAPI, ExtensionContext } from "@mariozechner/pi-coding-agent";
 import { Text } from "@mariozechner/pi-tui";
 import { Type, type Static } from "@sinclair/typebox";
+import { StringEnum } from "@mariozechner/pi-ai";
 import {
   truncateHead,
   DEFAULT_MAX_BYTES,
   DEFAULT_MAX_LINES,
   formatSize,
+  writeTempFile,
 } from "@mariozechner/pi-coding-agent";
 import Exa from "exa-js";
 
@@ -197,12 +199,7 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
       description: "Natural language search query",
     }),
     contentType: Type.Optional(
-      Type.Union([
-        Type.Literal("text"),
-        Type.Literal("highlights"),
-        Type.Literal("summary"),
-        Type.Literal("none"),
-      ]),
+      StringEnum(["text", "highlights", "summary", "none"] as const),
     ),
     numResults: Type.Optional(
       Type.Number({
@@ -248,10 +245,7 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
         response = await exa.search(params.query, searchOptions);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text", text: `Exa API error: ${message}` }],
-          details: { query: params.query, numResults: 0 } as SearchDetails,
-        };
+        throw new Error(`Exa API error: ${message}`);
       }
 
       let output = formatSearchResults({
@@ -267,8 +261,10 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
       let result = truncation.content;
 
       if (truncation.truncated) {
+        const tempFile = writeTempFile(output);
         result += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
-        result += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).]`;
+        result += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
+        result += ` Full output saved to: ${tempFile}]`;
       }
 
       return {
@@ -291,7 +287,7 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
       return new Text(text, 0, 0);
     },
 
-    renderResult(result, { expanded: _expanded }, theme) {
+    renderResult(result, { expanded: _expanded, isPartial: _isPartial }, theme, _context) {
       const details = result.details as SearchDetails | undefined;
 
       if (!details) {
@@ -311,7 +307,7 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
       description: "URL to fetch content from",
     }),
     contentType: Type.Optional(
-      Type.Union([Type.Literal("text"), Type.Literal("highlights"), Type.Literal("summary")]),
+      StringEnum(["text", "highlights", "summary"] as const),
     ),
     maxCharacters: Type.Optional(
       Type.Number({
@@ -361,10 +357,7 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
         response = await exa.getContents(params.url, contentsOptions);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        return {
-          content: [{ type: "text", text: `Exa API error: ${message}` }],
-          details: { url: params.url } as FetchDetails,
-        };
+        throw new Error(`Exa API error: ${message}`);
       }
 
       if (!response.results || response.results.length === 0) {
@@ -385,8 +378,10 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
       let content = truncation.content;
 
       if (truncation.truncated) {
+        const tempFile = writeTempFile(output);
         content += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
-        content += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).]`;
+        content += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
+        content += ` Full output saved to: ${tempFile}]`;
       }
 
       return {
@@ -408,7 +403,7 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
       return new Text(text, 0, 0);
     },
 
-    renderResult(result, { expanded: _expanded }, theme) {
+    renderResult(result, { expanded: _expanded, isPartial: _isPartial }, theme, _context) {
       const details = result.details as FetchDetails | undefined;
 
       if (!details) {
