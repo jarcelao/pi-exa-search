@@ -22,7 +22,7 @@
     "format:check": "oxfmt --check"
   },
   "dependencies": {
-    "exa-js": "^1.1.1"
+    "exa-js": "^2.10.1"
   },
   "devDependencies": {
     "@types/node": "^25.5.0",
