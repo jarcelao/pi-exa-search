@@ -1,6 +1,6 @@
 # pi-exa-api
 
-Web search and content fetching for [pi](https://pi.dev) via the [Exa API](https://exa.ai/).
+Web search, content fetching, and code context for [pi](https://pi.dev) via the [Exa API](https://exa.ai/).
 
 ## Installation
 
@@ -65,6 +65,23 @@ Fetch the content from https://example.com/article
   - `highlights` - Key excerpts
   - `summary` - AI-generated summary
 - `maxCharacters` (optional) - Maximum characters to return (1000-100000)
+
+### Code Context
+
+The agent can use `exa_code_context` to find code snippets and examples from open source libraries and repositories:
+
+```
+Find examples of React hooks for state management
+```
+
+It's ideal for understanding how libraries, frameworks, or programming concepts are implemented in practice.
+
+**Parameters:**
+
+- `query` (required) - Search query for code snippets and examples (1-2000 characters)
+- `tokensNum` (optional) - Token limit for the response:
+  - `"dynamic"` (default) - Automatically determine optimal response length
+  - `50-100000` - Specific number of tokens (5000 is a good default, use 10000 when more context is needed)
 
 ## Development
 
