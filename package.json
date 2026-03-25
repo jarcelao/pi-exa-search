@@ -1,6 +1,6 @@
 {
   "name": "@jarcelao/pi-exa-api",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "description": "Web search and content fetching for pi via the Exa API",
   "keywords": [
     "pi-package"
