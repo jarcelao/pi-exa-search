@@ -281,96 +281,95 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
     defineTool({
       name: "exa_search",
       label: "Exa Search",
-    description:
-      "Search the web using Exa's neural search API. Best for factual queries, research, and finding relevant web content. Use highlights mode by default for token efficiency.",
-    parameters: ExaSearchParams,
+      description:
+        "Search the web using Exa's neural search API. Best for factual queries, research, and finding relevant web content. Use highlights mode by default for token efficiency.",
+      parameters: ExaSearchParams,
 
-    async execute(
-      _toolCallId: string,
-      params: Static<typeof ExaSearchParams>,
-      _signal: AbortSignal | undefined,
-      _onUpdate: unknown,
-      _ctx: ExtensionContext,
-    ) {
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        throw createMissingApiKeyError();
-      }
+      async execute(
+        _toolCallId: string,
+        params: Static<typeof ExaSearchParams>,
+        _signal: AbortSignal | undefined,
+        _onUpdate: unknown,
+        _ctx: ExtensionContext,
+      ) {
+        const apiKey = getApiKey();
+        if (!apiKey) {
+          throw createMissingApiKeyError();
+        }
 
-      const numResults = Math.max(1, Math.min(100, params.numResults ?? 10));
-      const exa = new Exa(apiKey);
+        const numResults = Math.max(1, Math.min(100, params.numResults ?? 10));
+        const exa = new Exa(apiKey);
 
-      const contents = mapSearchContentType(params.contentType as SearchContentType | undefined);
-      const searchOptions: {
-        numResults: number;
-        contents?: { text?: true; highlights?: true; summary?: true };
-      } = { numResults };
+        const contents = mapSearchContentType(params.contentType as SearchContentType | undefined);
+        const searchOptions: {
+          numResults: number;
+          contents?: { text?: true; highlights?: true; summary?: true };
+        } = { numResults };
 
-      if (contents) {
-        searchOptions.contents = contents;
-      }
+        if (contents) {
+          searchOptions.contents = contents;
+        }
 
-      let response;
-      try {
-        response = await exa.search(params.query, searchOptions);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`Exa API error: ${message}`);
-      }
+        let response;
+        try {
+          response = await exa.search(params.query, searchOptions);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`Exa API error: ${message}`);
+        }
 
-      let output = formatSearchResults({
-        results: response.results as ExaSearchResult[],
-        costDollars: response.costDollars as { total: number } | undefined,
-      });
+        let output = formatSearchResults({
+          results: response.results as ExaSearchResult[],
+          costDollars: response.costDollars as { total: number } | undefined,
+        });
 
-      const truncation = truncateHead(output, {
-        maxLines: DEFAULT_MAX_LINES,
-        maxBytes: DEFAULT_MAX_BYTES,
-      });
+        const truncation = truncateHead(output, {
+          maxLines: DEFAULT_MAX_LINES,
+          maxBytes: DEFAULT_MAX_BYTES,
+        });
 
-      let result = truncation.content;
+        let result = truncation.content;
 
-      if (truncation.truncated) {
-        const tempFile = await writeTempFile(output);
-        result += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
-        result += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
-        result += ` Full output saved to: ${tempFile}]`;
-      }
+        if (truncation.truncated) {
+          const tempFile = await writeTempFile(output);
+          result += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
+          result += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
+          result += ` Full output saved to: ${tempFile}]`;
+        }
 
-      return {
-        content: [{ type: "text", text: result }],
-        details: {
-          query: params.query,
-          numResults: response.results.length,
-          cost: response.costDollars,
-        } as SearchDetails,
-      };
-    },
+        return {
+          content: [{ type: "text", text: result }],
+          details: {
+            query: params.query,
+            numResults: response.results.length,
+            cost: response.costDollars,
+          } as SearchDetails,
+        };
+      },
 
-    renderCall(args, theme) {
-      const preview = args.query.length > 50 ? args.query.slice(0, 50) + "..." : args.query;
-      const desc = `${args.numResults ?? 10} results • ${args.contentType ?? "highlights"}`;
-      const text =
-        theme.fg("toolTitle", theme.bold("exa_search ")) +
-        theme.fg("muted", preview) +
-        theme.fg("dim", ` ${desc}`);
-      return new Text(text, 0, 0);
-    },
+      renderCall(args, theme) {
+        const preview = args.query.length > 50 ? args.query.slice(0, 50) + "..." : args.query;
+        const desc = `${args.numResults ?? 10} results • ${args.contentType ?? "highlights"}`;
+        const text =
+          theme.fg("toolTitle", theme.bold("exa_search ")) +
+          theme.fg("muted", preview) +
+          theme.fg("dim", ` ${desc}`);
+        return new Text(text, 0, 0);
+      },
 
-    renderResult(result, _options, theme) {
-      const details = result.details as SearchDetails | undefined;
+      renderResult(result, _options, theme) {
+        const details = result.details as SearchDetails | undefined;
 
-      if (!details) {
-        const text = result.content[0];
-        return new Text(text?.type === "text" ? text.text.slice(0, 60) : "", 0, 0);
-      }
+        if (!details) {
+          const text = result.content[0];
+          return new Text(text?.type === "text" ? text.text.slice(0, 60) : "", 0, 0);
+        }
 
-      const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
-      return new Text(theme.fg("success", `✓ ${details.numResults} results${cost}`), 0, 0);
-    },
-    })
+        const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
+        return new Text(theme.fg("success", `✓ ${details.numResults} results${cost}`), 0, 0);
+      },
+    }),
   );
-
 
   // Register exa_fetch tool
 
@@ -392,108 +391,110 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
     defineTool({
       name: "exa_fetch",
       label: "Exa Fetch",
-    description:
-      "Fetch and extract content from a specific URL using Exa. Can return full text, highlights, or AI-generated summary.",
-    parameters: ExaFetchParams,
+      description:
+        "Fetch and extract content from a specific URL using Exa. Can return full text, highlights, or AI-generated summary.",
+      parameters: ExaFetchParams,
 
-    async execute(
-      _toolCallId: string,
-      params: Static<typeof ExaFetchParams>,
-      _signal: AbortSignal | undefined,
-      _onUpdate: unknown,
-      _ctx: ExtensionContext,
-    ) {
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        throw createMissingApiKeyError();
-      }
+      async execute(
+        _toolCallId: string,
+        params: Static<typeof ExaFetchParams>,
+        _signal: AbortSignal | undefined,
+        _onUpdate: unknown,
+        _ctx: ExtensionContext,
+      ) {
+        const apiKey = getApiKey();
+        if (!apiKey) {
+          throw createMissingApiKeyError();
+        }
 
-      const exa = new Exa(apiKey);
+        const exa = new Exa(apiKey);
 
-      const contentsOptions: {
-        text?: true;
-        highlights?: true;
-        summary?: true;
-        maxCharacters?: number;
-      } = {};
+        const contentsOptions: {
+          text?: true;
+          highlights?: true;
+          summary?: true;
+          maxCharacters?: number;
+        } = {};
 
-      const mappedContent = mapFetchContentType(params.contentType as FetchContentType | undefined);
-      if (mappedContent?.text) contentsOptions.text = true;
-      if (mappedContent?.highlights) contentsOptions.highlights = true;
-      if (mappedContent?.summary) contentsOptions.summary = true;
-      if (params.maxCharacters) {
-        contentsOptions.maxCharacters = Math.max(1000, Math.min(100000, params.maxCharacters));
-      }
+        const mappedContent = mapFetchContentType(
+          params.contentType as FetchContentType | undefined,
+        );
+        if (mappedContent?.text) contentsOptions.text = true;
+        if (mappedContent?.highlights) contentsOptions.highlights = true;
+        if (mappedContent?.summary) contentsOptions.summary = true;
+        if (params.maxCharacters) {
+          contentsOptions.maxCharacters = Math.max(1000, Math.min(100000, params.maxCharacters));
+        }
 
-      let response;
-      try {
-        response = await exa.getContents(params.url, contentsOptions);
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`Exa API error: ${message}`);
-      }
+        let response;
+        try {
+          response = await exa.getContents(params.url, contentsOptions);
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`Exa API error: ${message}`);
+        }
 
-      if (!response.results || response.results.length === 0) {
+        if (!response.results || response.results.length === 0) {
+          return {
+            content: [{ type: "text", text: "No content found at this URL." }],
+            details: { url: params.url, cost: response.costDollars } as FetchDetails,
+          };
+        }
+
+        const result = response.results[0] as ExaSearchResult;
+        let output = formatFetchResult(result, (params.contentType ?? "text") as FetchContentType);
+
+        const truncation = truncateHead(output, {
+          maxLines: DEFAULT_MAX_LINES,
+          maxBytes: DEFAULT_MAX_BYTES,
+        });
+
+        let content = truncation.content;
+
+        if (truncation.truncated) {
+          const tempFile = await writeTempFile(output);
+          content += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
+          content += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
+          content += ` Full output saved to: ${tempFile}]`;
+        }
+
         return {
-          content: [{ type: "text", text: "No content found at this URL." }],
-          details: { url: params.url, cost: response.costDollars } as FetchDetails,
+          content: [{ type: "text", text: content }],
+          details: {
+            url: params.url,
+            title: result.title,
+            cost: response.costDollars,
+          } as FetchDetails,
         };
-      }
+      },
 
-      const result = response.results[0] as ExaSearchResult;
-      let output = formatFetchResult(result, (params.contentType ?? "text") as FetchContentType);
+      renderCall(args, theme) {
+        const urlPreview = args.url.length > 40 ? args.url.slice(0, 40) + "..." : args.url;
+        const desc = args.contentType ?? "text";
+        const text =
+          theme.fg("toolTitle", theme.bold("exa_fetch ")) +
+          theme.fg("muted", urlPreview) +
+          theme.fg("dim", ` ${desc}`);
+        return new Text(text, 0, 0);
+      },
 
-      const truncation = truncateHead(output, {
-        maxLines: DEFAULT_MAX_LINES,
-        maxBytes: DEFAULT_MAX_BYTES,
-      });
+      renderResult(result, _options, theme) {
+        const details = result.details as FetchDetails | undefined;
 
-      let content = truncation.content;
+        if (!details) {
+          const text = result.content[0];
+          return new Text(text?.type === "text" ? text.text.slice(0, 60) : "", 0, 0);
+        }
 
-      if (truncation.truncated) {
-        const tempFile = await writeTempFile(output);
-        content += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
-        content += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
-        content += ` Full output saved to: ${tempFile}]`;
-      }
+        const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
 
-      return {
-        content: [{ type: "text", text: content }],
-        details: {
-          url: params.url,
-          title: result.title,
-          cost: response.costDollars,
-        } as FetchDetails,
-      };
-    },
+        if (details.title) {
+          return new Text(theme.fg("success", `✓ ${details.title}${cost}`), 0, 0);
+        }
 
-    renderCall(args, theme) {
-      const urlPreview = args.url.length > 40 ? args.url.slice(0, 40) + "..." : args.url;
-      const desc = args.contentType ?? "text";
-      const text =
-        theme.fg("toolTitle", theme.bold("exa_fetch ")) +
-        theme.fg("muted", urlPreview) +
-        theme.fg("dim", ` ${desc}`);
-      return new Text(text, 0, 0);
-    },
-
-    renderResult(result, _options, theme) {
-      const details = result.details as FetchDetails | undefined;
-
-      if (!details) {
-        const text = result.content[0];
-        return new Text(text?.type === "text" ? text.text.slice(0, 60) : "", 0, 0);
-      }
-
-      const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
-
-      if (details.title) {
-        return new Text(theme.fg("success", `✓ ${details.title}${cost}`), 0, 0);
-      }
-
-      return new Text(theme.fg("success", `✓ Fetched${cost}`), 0, 0);
-    },
-    })
+        return new Text(theme.fg("success", `✓ Fetched${cost}`), 0, 0);
+      },
+    }),
   );
 
   // Register exa_code_context tool
@@ -518,116 +519,115 @@ export default function exaSearchExtension(pi: ExtensionAPI): void {
     defineTool({
       name: "exa_code_context",
       label: "Exa Code Context",
-    description:
-      "Search for code snippets and examples from open source libraries and repositories. Use this to find working code examples that help understand how libraries, frameworks, or concepts are implemented.",
-    parameters: ExaCodeContextParams,
+      description:
+        "Search for code snippets and examples from open source libraries and repositories. Use this to find working code examples that help understand how libraries, frameworks, or concepts are implemented.",
+      parameters: ExaCodeContextParams,
 
-    async execute(
-      _toolCallId: string,
-      params: Static<typeof ExaCodeContextParams>,
-      _signal: AbortSignal | undefined,
-      _onUpdate: unknown,
-      _ctx: ExtensionContext,
-    ) {
-      const apiKey = getApiKey();
-      if (!apiKey) {
-        throw createMissingApiKeyError();
-      }
-
-      // Ensure tokensNum is the correct type: number or "dynamic"
-      // The schema accepts both string and number, but the Exa API requires:
-      // - A number (e.g., 5000)
-      // - The literal string "dynamic"
-      let tokensNum: string | number = params.tokensNum ?? "dynamic";
-      if (typeof tokensNum === "string" && tokensNum !== "dynamic") {
-        tokensNum = Number(tokensNum);
-      }
-
-      let response;
-      try {
-        const httpResponse = await fetch("https://api.exa.ai/context", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": apiKey,
-          },
-          body: JSON.stringify({
-            query: params.query,
-            tokensNum,
-          }),
-        });
-
-        if (!httpResponse.ok) {
-          const errorText = await httpResponse.text();
-          throw new Error(`HTTP ${httpResponse.status}: ${errorText}`);
+      async execute(
+        _toolCallId: string,
+        params: Static<typeof ExaCodeContextParams>,
+        _signal: AbortSignal | undefined,
+        _onUpdate: unknown,
+        _ctx: ExtensionContext,
+      ) {
+        const apiKey = getApiKey();
+        if (!apiKey) {
+          throw createMissingApiKeyError();
         }
 
-        response = (await httpResponse.json()) as CodeContextResponse;
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw new Error(`Exa Context API error: ${message}`);
-      }
+        // Ensure tokensNum is the correct type: number or "dynamic"
+        // The schema accepts both string and number, but the Exa API requires:
+        // - A number (e.g., 5000)
+        // - The literal string "dynamic"
+        let tokensNum: string | number = params.tokensNum ?? "dynamic";
+        if (typeof tokensNum === "string" && tokensNum !== "dynamic") {
+          tokensNum = Number(tokensNum);
+        }
 
-      let output = formatCodeContextResult(response);
+        let response;
+        try {
+          const httpResponse = await fetch("https://api.exa.ai/context", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": apiKey,
+            },
+            body: JSON.stringify({
+              query: params.query,
+              tokensNum,
+            }),
+          });
 
-      const truncation = truncateHead(output, {
-        maxLines: DEFAULT_MAX_LINES,
-        maxBytes: DEFAULT_MAX_BYTES,
-      });
+          if (!httpResponse.ok) {
+            const errorText = await httpResponse.text();
+            throw new Error(`HTTP ${httpResponse.status}: ${errorText}`);
+          }
 
-      let result = truncation.content;
+          response = (await httpResponse.json()) as CodeContextResponse;
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error);
+          throw new Error(`Exa Context API error: ${message}`);
+        }
 
-      if (truncation.truncated) {
-        const tempFile = await writeTempFile(output);
-        result += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
-        result += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
-        result += ` Full output saved to: ${tempFile}]`;
-      }
+        let output = formatCodeContextResult(response);
 
-      const cost = parseCostDollars(response.costDollars);
+        const truncation = truncateHead(output, {
+          maxLines: DEFAULT_MAX_LINES,
+          maxBytes: DEFAULT_MAX_BYTES,
+        });
 
-      return {
-        content: [{ type: "text", text: result }],
-        details: {
-          query: params.query,
-          resultsCount: response.resultsCount,
-          outputTokens: response.outputTokens,
-          cost,
-        } as CodeContextDetails,
-      };
-    },
+        let result = truncation.content;
 
-    renderCall(args, theme) {
-      const preview = args.query.length > 50 ? args.query.slice(0, 50) + "..." : args.query;
-      const desc = `${args.tokensNum ?? "dynamic"} tokens`;
-      const text =
-        theme.fg("toolTitle", theme.bold("exa_code_context ")) +
-        theme.fg("muted", preview) +
-        theme.fg("dim", ` ${desc}`);
-      return new Text(text, 0, 0);
-    },
+        if (truncation.truncated) {
+          const tempFile = await writeTempFile(output);
+          result += `\n\n[Output truncated: ${truncation.outputLines} of ${truncation.totalLines} lines`;
+          result += ` (${formatSize(truncation.outputBytes)} of ${formatSize(truncation.totalBytes)}).`;
+          result += ` Full output saved to: ${tempFile}]`;
+        }
 
-    renderResult(result, _options, theme) {
-      const details = result.details as CodeContextDetails | undefined;
+        const cost = parseCostDollars(response.costDollars);
 
-      if (!details) {
-        const text = result.content[0];
-        return new Text(text?.type === "text" ? text.text.slice(0, 60) : "", 0, 0);
-      }
+        return {
+          content: [{ type: "text", text: result }],
+          details: {
+            query: params.query,
+            resultsCount: response.resultsCount,
+            outputTokens: response.outputTokens,
+            cost,
+          } as CodeContextDetails,
+        };
+      },
 
-      const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
-      return new Text(
-        theme.fg(
-          "success",
-          `✓ ${details.resultsCount} sources • ${details.outputTokens} tokens${cost}`,
-        ),
-        0,
-        0,
-      );
-    },
-    })
+      renderCall(args, theme) {
+        const preview = args.query.length > 50 ? args.query.slice(0, 50) + "..." : args.query;
+        const desc = `${args.tokensNum ?? "dynamic"} tokens`;
+        const text =
+          theme.fg("toolTitle", theme.bold("exa_code_context ")) +
+          theme.fg("muted", preview) +
+          theme.fg("dim", ` ${desc}`);
+        return new Text(text, 0, 0);
+      },
+
+      renderResult(result, _options, theme) {
+        const details = result.details as CodeContextDetails | undefined;
+
+        if (!details) {
+          const text = result.content[0];
+          return new Text(text?.type === "text" ? text.text.slice(0, 60) : "", 0, 0);
+        }
+
+        const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
+        return new Text(
+          theme.fg(
+            "success",
+            `✓ ${details.resultsCount} sources • ${details.outputTokens} tokens${cost}`,
+          ),
+          0,
+          0,
+        );
+      },
+    }),
   );
-
 
   // Register /exa-status command
 
