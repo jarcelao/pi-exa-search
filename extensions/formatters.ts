@@ -2,6 +2,9 @@
  * Result formatting utilities
  */
 
+import { keyHint } from "@mariozechner/pi-coding-agent";
+import type { Theme } from "@mariozechner/pi-coding-agent";
+
 import type {
   ExaSearchResult,
   ExaSearchResponse,
@@ -100,6 +103,46 @@ export function parseCostDollars(costDollars: string | { total: number }): { tot
     return JSON.parse(costDollars);
   }
   return costDollars;
+}
+
+/**
+ * Format a preview of tool output for TUI display.
+ * Shows up to 10 lines when collapsed, full output when expanded.
+ */
+export function formatToolOutputPreview(
+  result: { content: Array<{ type: string; text?: string }> },
+  options: { expanded: boolean },
+  theme: Theme,
+): string {
+  const textBlocks = result.content
+    .filter((c): c is { type: "text"; text: string } => c.type === "text")
+    .map((c) => c.text || "");
+
+  if (textBlocks.length === 0) {
+    return "";
+  }
+
+  const output = textBlocks.join("\n");
+  const lines = output.split("\n");
+
+  // Trim trailing empty lines
+  let end = lines.length;
+  while (end > 0 && lines[end - 1] === "") {
+    end--;
+  }
+  const trimmedLines = lines.slice(0, end);
+
+  const maxLines = options.expanded ? trimmedLines.length : 10;
+  const displayLines = trimmedLines.slice(0, maxLines);
+  const remaining = trimmedLines.length - maxLines;
+
+  let text = displayLines.map((line) => theme.fg("toolOutput", line)).join("\n");
+
+  if (remaining > 0) {
+    text += `\n${theme.fg("muted", `... (${remaining} more lines, ${keyHint("app.tools.expand", "to expand")})`)}`;
+  }
+
+  return text;
 }
 
 /**

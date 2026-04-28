@@ -20,7 +20,7 @@ import Exa from "exa-js";
 import { getApiKey } from "../api-key.ts";
 import { createMissingApiKeyError } from "../errors.ts";
 import { mapSearchContentType } from "../content-types.ts";
-import { formatSearchResults } from "../formatters.ts";
+import { formatSearchResults, formatToolOutputPreview } from "../formatters.ts";
 import type { SearchContentType, SearchDetails, ExaSearchResult } from "../types.ts";
 
 // Tool parameter schema
@@ -130,15 +130,19 @@ export function createExaSearchTool() {
       return new Text(text, 0, 0);
     },
 
-    renderResult(result: { details?: SearchDetails }, _options: unknown, theme: Theme) {
+    renderResult(result, options, theme, context) {
       const details = result.details as SearchDetails | undefined;
+      const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
 
-      if (!details) {
-        return new Text("", 0, 0);
+      let header = "";
+      if (details) {
+        const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
+        header = theme.fg("success", `✓ ${details.numResults} results${cost}`);
       }
 
-      const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
-      return new Text(theme.fg("success", `✓ ${details.numResults} results${cost}`), 0, 0);
+      const preview = formatToolOutputPreview(result, options, theme);
+      text.setText(preview ? `${header}\n${preview}` : header);
+      return text;
     },
   });
 }

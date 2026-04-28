@@ -20,7 +20,7 @@ import Exa from "exa-js";
 import { getApiKey } from "../api-key.ts";
 import { createMissingApiKeyError } from "../errors.ts";
 import { mapFetchContentType } from "../content-types.ts";
-import { formatFetchResult } from "../formatters.ts";
+import { formatFetchResult, formatToolOutputPreview } from "../formatters.ts";
 import type { FetchContentType, FetchDetails, ExaSearchResult } from "../types.ts";
 
 // Tool parameter schema
@@ -134,20 +134,21 @@ export function createExaFetchTool() {
       return new Text(text, 0, 0);
     },
 
-    renderResult(result: { details?: FetchDetails }, _options: unknown, theme: Theme) {
+    renderResult(result, options, theme, context) {
       const details = result.details as FetchDetails | undefined;
+      const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
 
-      if (!details) {
-        return new Text("", 0, 0);
+      let header = "";
+      if (details) {
+        const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
+        header = details.title
+          ? theme.fg("success", `✓ ${details.title}${cost}`)
+          : theme.fg("success", `✓ Fetched${cost}`);
       }
 
-      const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
-
-      if (details.title) {
-        return new Text(theme.fg("success", `✓ ${details.title}${cost}`), 0, 0);
-      }
-
-      return new Text(theme.fg("success", `✓ Fetched${cost}`), 0, 0);
+      const preview = formatToolOutputPreview(result, options, theme);
+      text.setText(preview ? `${header}\n${preview}` : header);
+      return text;
     },
   });
 }

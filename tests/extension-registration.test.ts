@@ -75,6 +75,7 @@ describe("exa_fetch renderResult", () => {
       },
       { expanded: false, isPartial: false },
       mockTheme,
+      { lastComponent: undefined },
     );
     expect(rendered.text).toContain("Test Page");
     expect(rendered.text).toContain("$0.000123");
@@ -87,6 +88,7 @@ describe("exa_fetch renderResult", () => {
       { content: [], details: { url: "https://example.com", cost: { total: 0.000456 } } },
       { expanded: false, isPartial: false },
       mockTheme,
+      { lastComponent: undefined },
     );
     expect(rendered.text).toContain("Fetched");
     expect(rendered.text).toContain("$0.000456");
@@ -99,6 +101,7 @@ describe("exa_fetch renderResult", () => {
       { content: [] },
       { expanded: false, isPartial: false },
       mockTheme,
+      { lastComponent: undefined },
     );
     expect(rendered.text).toBe("");
   });
@@ -120,6 +123,7 @@ describe("exa_code_context renderResult", () => {
       },
       { expanded: false, isPartial: false },
       mockTheme,
+      { lastComponent: undefined },
     );
     expect(rendered.text).toContain("502 sources");
     expect(rendered.text).toContain("4805 tokens");
@@ -136,6 +140,7 @@ describe("exa_code_context renderResult", () => {
       },
       { expanded: false, isPartial: false },
       mockTheme,
+      { lastComponent: undefined },
     );
     expect(rendered.text).toContain("100 sources");
     expect(rendered.text).toContain("2000 tokens");
@@ -149,6 +154,7 @@ describe("exa_code_context renderResult", () => {
       { content: [{ type: "text", text: "Some code context output here" }] },
       { expanded: false, isPartial: false },
       mockTheme,
+      { lastComponent: undefined },
     );
     expect(rendered.text).toContain("Some code context");
   });

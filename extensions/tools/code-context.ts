@@ -18,7 +18,11 @@ import { Type, type Static } from "typebox";
 
 import { getApiKey } from "../api-key.ts";
 import { createMissingApiKeyError } from "../errors.ts";
-import { formatCodeContextResult, parseCostDollars } from "../formatters.ts";
+import {
+  formatCodeContextResult,
+  formatToolOutputPreview,
+  parseCostDollars,
+} from "../formatters.ts";
 import type { CodeContextDetails, CodeContextResponse } from "../types.ts";
 
 // Tool parameter schema
@@ -138,27 +142,22 @@ export function createExaCodeContextTool() {
       return new Text(text, 0, 0);
     },
 
-    renderResult(
-      result: { content: Array<{ type: string; text: string }>; details?: CodeContextDetails },
-      _options: unknown,
-      theme: Theme,
-    ) {
+    renderResult(result, options, theme, context) {
       const details = result.details as CodeContextDetails | undefined;
+      const text = (context.lastComponent as Text | undefined) ?? new Text("", 0, 0);
 
-      if (!details) {
-        const text = result.content[0];
-        return new Text(text?.type === "text" ? text.text.slice(0, 60) : "", 0, 0);
-      }
-
-      const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
-      return new Text(
-        theme.fg(
+      let header = "";
+      if (details) {
+        const cost = details.cost ? ` • $${details.cost.total.toFixed(6)}` : "";
+        header = theme.fg(
           "success",
           `✓ ${details.resultsCount} sources • ${details.outputTokens} tokens${cost}`,
-        ),
-        0,
-        0,
-      );
+        );
+      }
+
+      const preview = formatToolOutputPreview(result, options, theme);
+      text.setText(preview ? `${header}\n${preview}` : header);
+      return text;
     },
   });
 }
